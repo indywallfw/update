@@ -1,98 +1,44 @@
-OPNsense update utilities
+Indywall update utilities
 =========================
 
-This is a collection of firmware upgrade tools specifically written
-for OPNsense based on FreeBSD ideas (kernel and base sets) and tools
-(pkg(8) and freebsd-update(8)).
+The firmware update tools of the Indywall firewall: kernel and base set
+updates in the FreeBSD style, plus package updates through pkg(8), with
+signature verification for every moving part.
 
-opnsense-update
-===============
+The tools keep their `opnsense-*` command names, which the rest of the
+system calls by name.
 
-opnsense-update(8) unifies the update process into a single tool
-usable from the command line. Since OPNsense uses FreeBSD's package
-manager, but not the native upgrade mechanism, an alternative way
-of doing base and kernel updates needed to be introduced.
+| Command | Purpose |
+|---|---|
+| `opnsense-update` | Single tool for package, base and kernel updates, including major FreeBSD version upgrades and debug kernels. Verifies signatures through pkg(8)'s own mechanisms. |
+| `opnsense-bootstrap` | Reinstalls a running system in place (factory reset or file consistency), optionally wiping the configuration; can turn a stock FreeBSD release into an installation. |
+| `opnsense-sign`, `opnsense-verify` | Sign and verify arbitrary files with pkg(8)'s signature methods, so packages and sets share one key store. |
+| `opnsense-fetch` | Wraps fetch(1) and reports download progress to the caller. |
+| `opnsense-patch` | Applies upstream git patches to core, plugins, installer and update tools, with a local cache for offline use. |
+| `opnsense-code` | Fetches or updates full source repositories on an installed system with git(1). |
+| `opnsense-revert` | Reverts a package to its state in an earlier release, within what the package mirrors hold. |
 
-The process relies on signature verification for all moving parts
-(packages and sets) by plugging into pkg(8)'s native verification
-mechanisms.
+Status for Indywall
+-------------------
 
-The utility was first introduced in February 2015.  In October 2016,
-major FreeBSD version upgrade support was added.  In August 2017,
-debug kernel support was added.
+The package mirrors for Indywall are not live yet (placeholders such as
+`https://pkg.indywall.invalid`). Until they are, updates, bootstrapping and
+reverts that need a mirror do not work for Indywall systems, and the
+bootstrap instructions of the upstream project do not apply.
 
-opnsense-bootstrap
-==================
+How the image uses this repository
+----------------------------------
 
-opnsense-bootstrap(8) is a tool that can completely reinstall a
-running system in place for a thorough factory reset or to restore
-consistency of all the OPNsense files.  It can also wipe the
-configuration directory, but won't do that by default.
+The Indywall image installs this code as the `opnsense-update` package,
+built by the `opnsense/update` port in
+[indywallfw/ports](https://github.com/indywallfw/ports). The port pins a
+commit of this repository (`GH_TAGNAME`); to ship a change, merge it into
+`master` here, then update `GH_TAGNAME` and regenerate `distinfo`
+(`make makesum`) in the port.
 
-It will automatically pick up the latest available version and
-build a chain of trust by using current package fingerprints -> CA
-root certificates -> HTTPS -> OPNsense package fingerprints.
+Origin
+------
 
-What it will also do is turn a supported stock FreeBSD release into
-an OPNsense installation.  Both UFS and ZFS installations are supported.
-
-The usage is simple, starting with a FreeBSD 15.1-RELEASE image:
-
-    # fetch https://raw.githubusercontent.com/opnsense/update/master/src/bootstrap/opnsense-bootstrap.sh.in
-    # sh ./opnsense-bootstrap.sh.in -r 26.7
-
-After successful reboot, OPNsense should be up and running.  :)
-
-The utility was first introduced in November 2015.
-
-opnsense-sign, opnsense-verify
-==============================
-
-opnsense-sign(8) and opnsense-verify(8) sign and verify arbitrary
-files using signature verification methods available by pkg(8),
-so that a single key store can be used for packages and sets.
-
-opnsense-verify(8) is based on the existing pkg bootstrap code present
-in the FreeBSD base code, but has been improved for multi-repo use.
-
-Both utilities were first introduced in December 2015.
-
-opnsense-fetch
-==============
-
-opnsense-fetch(8) creates a watcher process for fetch(1) and passes
-all arguments to it.  The watcher then prints progress output to the
-actual caller to indicate ongoing download progress.
-
-The utility was first introduced in April 2016.
-
-opnsense-patch
-==============
-
-opnsense-patch(8) applies upstream git(1) patches in the order that they
-have been given.  This helps to deploy fixes faster without the need
-to run manual edits or file downloads since patch(1) tries to keep the
-file integrity intact.
-
-The utility was first introduced in May 2016 to enable core and plugins
-patching.  In February 2019, a local caching mechanism was added to provide
-offline patching capability.  In July 2021 support for patching installer
-and update tools was added.
-
-opnsense-code
-=============
-
-Deriving from the utility of opnsense-patch(8), its younger sibling
-opnsense-code(8) can handle full code repositories using git(1)
-in order to fetch or update the full source code on an installed system.
-
-The utility was first introduced in August 2016.
-
-opnsense-revert
-===============
-
-In the available scope of the package mirrors, this utility can
-revert any package to a previous state of a particular OPNsense
-release.
-
-The utility was first introduced in January 2017.
+Indywall is built on [OPNsense](https://opnsense.org). This repository is a
+fork of [opnsense/update](https://github.com/opnsense/update) and remains
+available under the BSD 2-clause license in `LICENSE`.
