@@ -154,7 +154,6 @@ mirror_abi()
 
 	# The first part after ABI is our suffix and
 	# we need all of it to find the correct sets.
-
 	MIRROR=$(sed -n 's/'"${URL_KEY}"'\"\(.*\/${ABI}\/\)\([^\/]*\)\/.*/\1'"${DIR}"'/p' ${ORIGIN})
 	if [ -z "${MIRROR}" ]; then
 		echo "Mirror read failed." >&2
@@ -162,7 +161,13 @@ mirror_abi()
 	fi
 
 	if [ "${OPT}" != "raw" ]; then
-		eval MIRROR="${MIRROR}"
+		# This used to be an eval through design choices
+		# by FreeBSD pkg, but for the sake of security
+		# only replace the known variables here:
+		for VAR in ABI; do
+			VAL=$(export ${VAR}; printenv ${VAR})
+			MIRROR=$(echo "${MIRROR}" | sed 's|${'"${VAR}"'}|'"${VAL}"'|')
+		done
 	fi
 
 	echo "${MIRROR}"
