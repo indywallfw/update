@@ -95,6 +95,35 @@ if [ -f ${VERSIONDIR}/kernel.lock ]; then
 	LOCKED_KERNEL=1
 fi
 
+indywall_release()
+{
+	# Indywall builds base and kernel sets for every release, named after it
+	# (base-1.0.13-amd64.txz), and the core package carries the same version:
+	# the sets to install are those of the newest core, the one in the
+	# repository (so the check before the packages are upgraded already sees
+	# the new base and kernel) or the installed one, never an older one (a
+	# mirror that lags behind must not downgrade base)
+	local CORE INSTALLED REMOTE
+
+	CORE=$(opnsense-version -n 2> /dev/null)
+	INSTALLED=$(opnsense-version -v 2> /dev/null)
+	INSTALLED=${INSTALLED%%_*}
+	REMOTE=
+	if [ -n "${CORE}" ]; then
+		REMOTE=$(${PKG} rquery -U %v "${CORE}" 2> /dev/null | head -n 1)
+		REMOTE=${REMOTE%%_*}
+		REMOTE=${REMOTE%%,*}
+	fi
+
+	if [ -n "${REMOTE}" -a -n "${INSTALLED}" ]; then
+		if [ "$(${PKG} version -t "${REMOTE}" "${INSTALLED}")" = "<" ]; then
+			REMOTE=${INSTALLED}
+		fi
+	fi
+
+	echo "${REMOTE:-${INSTALLED:-${RELEASE}}}"
+}
+
 read_config()
 {
 	# try to not evaluate syntax errors
@@ -452,6 +481,8 @@ fi
 if [ "${DO_FLUSH}" ]; then
 	flush_temporary
 fi
+
+RELEASE=$(indywall_release)
 
 if [ "${DO_RELEASE}" = "-R" ]; then
 	read_config UPGRADE_RELEASE
